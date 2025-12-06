@@ -107,24 +107,11 @@ chrome.commands.onCommand.addListener(async (command) => {
         // Window exists, increment selection
         shortcutClickCount++;
         
-        // Clear existing timer
-        if (shortcutTimer) {
-          clearTimeout(shortcutTimer);
-        }
-        
         // Notify the popup window to update selection
         chrome.runtime.sendMessage({
           action: 'updateSelection',
           selectedIndex: shortcutClickCount
         });
-        
-        // Set timer to switch to selected tab
-        shortcutTimer = setTimeout(() => {
-          chrome.runtime.sendMessage({
-            action: 'confirmSelection'
-          });
-          shortcutClickCount = 0;
-        }, SHORTCUT_TIMEOUT);
         
         // Focus the window
         chrome.windows.update(tabsListWindowId, { focused: true });

@@ -11,10 +11,40 @@ function closeWindow() {
 
 closeBtn.addEventListener('click', closeWindow);
 
-// Close on Escape key
+// Track key states
+let altPressed = false;
+let wPressed = false;
+
+// Handle keydown events
 document.addEventListener('keydown', (e) => {
+  if (e.key === 'Alt') {
+    altPressed = true;
+  }
+  if (e.key === 'w' || e.key === 'W') {
+    wPressed = true;
+  }
   if (e.key === 'Escape') {
     closeWindow();
+  }
+});
+
+// Handle keyup events - switch tab when both keys are released
+document.addEventListener('keyup', (e) => {
+  if (e.key === 'Alt') {
+    altPressed = false;
+  }
+  if (e.key === 'w' || e.key === 'W') {
+    wPressed = false;
+  }
+  
+  // If both Alt and W are released, switch to selected tab or close popup
+  if (!altPressed && !wPressed) {
+    if (selectedIndex > 0) {
+      switchToSelectedTab();
+    } else {
+      // If current tab is selected (index 0), just close the popup
+      closeWindow();
+    }
   }
 });
 
@@ -178,9 +208,6 @@ async function switchToSelectedTab() {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'updateSelection') {
     updateSelection(request.selectedIndex);
-    sendResponse({ success: true });
-  } else if (request.action === 'confirmSelection') {
-    switchToSelectedTab();
     sendResponse({ success: true });
   }
   return true;
