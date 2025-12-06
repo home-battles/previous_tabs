@@ -4,6 +4,11 @@ let tabHistory = [];
 // Maximum history size to prevent memory issues
 const MAX_HISTORY_SIZE = 100;
 
+// Track keyboard shortcut presses
+let shortcutClickCount = 0;
+let shortcutTimer = null;
+const SHORTCUT_TIMEOUT = 500; // 1 second window for multiple presses
+
 // Listen to tab activation events
 chrome.tabs.onActivated.addListener((activeInfo) => {
   const tabId = activeInfo.tabId;
@@ -82,5 +87,58 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     });
     
     return true; // Keep message channel open for async response
+  }
+});
+
+// Handle keyboard shortcut
+chrome.commands.onCommand.addListener((command) => {
+  if (command === 'go-to-previous-tab') {
+    shortcutClickCount++;
+    
+    // Clear existing timer
+    if (shortcutTimer) {
+      clearTimeout(shortcutTimer);
+    }
+    
+    // Set new timer to execute after timeout
+    shortcutTimer = setTimeout(() => {
+      const index = shortcutClickCount;
+      
+      // Get the current active tab
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        const currentTabId = tabs[0]?.id;
+        
+        // Find the index of current tab in history
+        const currentIndex = tabHistory.indexOf(currentTabId);
+        
+        // Calculate target index
+        let targetIndex = index;
+        if (currentIndex === 0) {
+          targetIndex = index;
+        } else {
+          targetIndex = currentIndex + index;
+        }
+        
+        // Get the target tab ID
+        if (targetIndex < tabHistory.length) {
+          const targetTabId = tabHistory[targetIndex];
+          
+          // Verify the tab still exists and switch to it
+          chrome.tabs.get(targetTabId, (tab) => {
+            if (!chrome.runtime.lastError) {
+              // Switch to the tab
+              chrome.tabs.update(targetTabId, { active: true });
+            } else {
+              // Tab doesn't exist, clean up history
+              tabHistory = tabHistory.filter(id => id !== targetTabId);
+              chrome.storage.local.set({ tabHistory: tabHistory });
+            }
+          });
+        }
+      });
+      
+      // Reset counter
+      shortcutClickCount = 0;
+    }, SHORTCUT_TIMEOUT);
   }
 });

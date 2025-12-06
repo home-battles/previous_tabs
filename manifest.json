@@ -7,6 +7,15 @@
     "tabs",
     "storage"
   ],
+  "commands": {
+    "go-to-previous-tab": {
+      "suggested_key": {
+        "default": "Alt+W",
+        "mac": "Alt+W"
+      },
+      "description": "Go to previous tab (press multiple times for further back)"
+    }
+  },
   "background": {
     "service_worker": "background.js"
   },
