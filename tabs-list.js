@@ -179,7 +179,12 @@ function escapeHtml(text) {
 
 // Update selection highlight
 function updateSelection(newIndex) {
-  selectedIndex = newIndex;
+  // Cycle back to 0 if we exceed the number of tabs
+  if (tabItems.length > 0) {
+    selectedIndex = newIndex % tabItems.length;
+  } else {
+    selectedIndex = 0;
+  }
   
   // Remove previous selection
   tabItems.forEach(item => item.classList.remove('selected'));
