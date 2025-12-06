@@ -7,7 +7,10 @@ const MAX_HISTORY_SIZE = 100;
 // Track keyboard shortcut presses
 let shortcutClickCount = 0;
 let shortcutTimer = null;
-const SHORTCUT_TIMEOUT = 500; // 1 second window for multiple presses
+const SHORTCUT_TIMEOUT = 500; // 0.5 second window for multiple presses
+
+// Track the tabs list popup window
+let tabsListWindowId = null;
 
 // Listen to tab activation events
 chrome.tabs.onActivated.addListener((activeInfo) => {
@@ -45,7 +48,10 @@ chrome.storage.local.get(['tabHistory'], (result) => {
 // Handle messages from popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'getTabHistory') {
-    sendResponse({ tabHistory: tabHistory });
+    sendResponse({ tabHistory: tabHistory, selectedIndex: shortcutClickCount });
+  } else if (request.action === 'registerTabsListWindow') {
+    tabsListWindowId = request.windowId;
+    sendResponse({ success: true });
   } else if (request.action === 'switchToPreviousTab') {
     const index = request.index || 1;
     
@@ -91,54 +97,72 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 // Handle keyboard shortcut
-chrome.commands.onCommand.addListener((command) => {
+chrome.commands.onCommand.addListener(async (command) => {
   if (command === 'go-to-previous-tab') {
-    shortcutClickCount++;
-    
-    // Clear existing timer
+    // Check if tabs list window is already open
+    if (tabsListWindowId) {
+      try {
+        const window = await chrome.windows.get(tabsListWindowId);
+        
+        // Window exists, increment selection
+        shortcutClickCount++;
+        
+        // Clear existing timer
+        if (shortcutTimer) {
+          clearTimeout(shortcutTimer);
+        }
+        
+        // Notify the popup window to update selection
+        chrome.runtime.sendMessage({
+          action: 'updateSelection',
+          selectedIndex: shortcutClickCount
+        });
+        
+        // Set timer to switch to selected tab
+        shortcutTimer = setTimeout(() => {
+          chrome.runtime.sendMessage({
+            action: 'confirmSelection'
+          });
+          shortcutClickCount = 0;
+        }, SHORTCUT_TIMEOUT);
+        
+        // Focus the window
+        chrome.windows.update(tabsListWindowId, { focused: true });
+      } catch (error) {
+        // Window doesn't exist, reset and open new one
+        tabsListWindowId = null;
+        shortcutClickCount = 0;
+        openTabsList();
+      }
+    } else {
+      // Open new tabs list window
+      shortcutClickCount = 0;
+      openTabsList();
+    }
+  }
+});
+
+// Function to open tabs list window
+function openTabsList() {
+  chrome.windows.create({
+    url: chrome.runtime.getURL('tabs-list.html'),
+    type: 'popup',
+    width: 520,
+    height: 650,
+    focused: true
+  }, (window) => {
+    tabsListWindowId = window.id;
+  });
+}
+
+// Listen for window close to reset tracking
+chrome.windows.onRemoved.addListener((windowId) => {
+  if (windowId === tabsListWindowId) {
+    tabsListWindowId = null;
+    shortcutClickCount = 0;
     if (shortcutTimer) {
       clearTimeout(shortcutTimer);
+      shortcutTimer = null;
     }
-    
-    // Set new timer to execute after timeout
-    shortcutTimer = setTimeout(() => {
-      const index = shortcutClickCount;
-      
-      // Get the current active tab
-      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        const currentTabId = tabs[0]?.id;
-        
-        // Find the index of current tab in history
-        const currentIndex = tabHistory.indexOf(currentTabId);
-        
-        // Calculate target index
-        let targetIndex = index;
-        if (currentIndex === 0) {
-          targetIndex = index;
-        } else {
-          targetIndex = currentIndex + index;
-        }
-        
-        // Get the target tab ID
-        if (targetIndex < tabHistory.length) {
-          const targetTabId = tabHistory[targetIndex];
-          
-          // Verify the tab still exists and switch to it
-          chrome.tabs.get(targetTabId, (tab) => {
-            if (!chrome.runtime.lastError) {
-              // Switch to the tab
-              chrome.tabs.update(targetTabId, { active: true });
-            } else {
-              // Tab doesn't exist, clean up history
-              tabHistory = tabHistory.filter(id => id !== targetTabId);
-              chrome.storage.local.set({ tabHistory: tabHistory });
-            }
-          });
-        }
-      });
-      
-      // Reset counter
-      shortcutClickCount = 0;
-    }, SHORTCUT_TIMEOUT);
   }
 });

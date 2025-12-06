@@ -1,18 +1,5 @@
-let clickCount = 0;
-let clickTimer = null;
-const CLICK_TIMEOUT = 1000; // 1 second window for multiple clicks
-
-const goBackBtn = document.getElementById('goBackBtn');
-const clickCounter = document.getElementById('clickCounter');
+const showTabsBtn = document.getElementById('showTabsBtn');
 const statusDiv = document.getElementById('status');
-
-function updateClickCounter() {
-  if (clickCount > 0) {
-    clickCounter.textContent = `Going back ${clickCount} tab${clickCount > 1 ? 's' : ''}...`;
-  } else {
-    clickCounter.textContent = '';
-  }
-}
 
 function updateStatus(message, isError = false) {
   statusDiv.textContent = message;
@@ -24,48 +11,24 @@ function updateStatus(message, isError = false) {
   }, 2000);
 }
 
-function executePreviousTab() {
-  const index = clickCount;
-  
-  chrome.runtime.sendMessage(
-    { action: 'switchToPreviousTab', index: index },
-    (response) => {
-      if (response && response.success) {
-        updateStatus(`Switched to tab ${index} back`);
-      } else {
-        const error = response?.error || 'Unknown error';
-        updateStatus(error, true);
-      }
-      
-      // Reset click count
-      clickCount = 0;
-      updateClickCounter();
-    }
-  );
-}
-
-goBackBtn.addEventListener('click', () => {
-  clickCount++;
-  updateClickCounter();
-  
-  // Clear existing timer
-  if (clickTimer) {
-    clearTimeout(clickTimer);
-  }
-  
-  // Set new timer
-  clickTimer = setTimeout(() => {
-    executePreviousTab();
-  }, CLICK_TIMEOUT);
-});
-
-// Keyboard support - press Enter or Space
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' || e.key === ' ') {
-    e.preventDefault();
-    goBackBtn.click();
+showTabsBtn.addEventListener('click', async () => {
+  try {
+    // Open the tabs list window
+    await chrome.windows.create({
+      url: chrome.runtime.getURL('tabs-list.html'),
+      type: 'popup',
+      width: 520,
+      height: 650,
+      focused: true
+    });
+    
+    // Close the extension popup
+    window.close();
+  } catch (error) {
+    console.error('Error opening tabs list:', error);
+    updateStatus('Error opening tabs list', true);
   }
 });
 
 // Focus the button when popup opens
-goBackBtn.focus();
+showTabsBtn.focus();
