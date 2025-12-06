@@ -53,8 +53,13 @@ async function loadTabs(initialSelectedIndex = 0) {
     
     const tabResults = await Promise.all(tabPromises);
     
-    // Filter out non-existent tabs
-    const validTabs = tabResults.filter(result => result.exists);
+    // Filter out non-existent tabs and the popup itself
+    const validTabs = tabResults.filter(result => {
+      if (!result.exists) return false;
+      // Exclude the popup window's tab (tabs-list.html)
+      const tab = result.tab;
+      return !tab.url.includes('tabs-list.html');
+    });
     
     if (validTabs.length === 0) {
       tabsContainer.innerHTML = `
