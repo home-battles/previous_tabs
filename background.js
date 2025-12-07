@@ -4,14 +4,6 @@ let tabHistory = [];
 // Maximum history size to prevent memory issues
 const MAX_HISTORY_SIZE = 100;
 
-// Track keyboard shortcut presses
-let shortcutClickCount = 0;
-let shortcutTimer = null;
-const SHORTCUT_TIMEOUT = 500; // 0.5 second window for multiple presses
-
-// Track the tabs list popup window
-let tabsListWindowId = null;
-
 // Listen to tab activation events
 chrome.tabs.onActivated.addListener((activeInfo) => {
   const tabId = activeInfo.tabId;
@@ -48,10 +40,7 @@ chrome.storage.local.get(['tabHistory'], (result) => {
 // Handle messages from popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'getTabHistory') {
-    sendResponse({ tabHistory: tabHistory, selectedIndex: shortcutClickCount });
-  } else if (request.action === 'registerTabsListWindow') {
-    tabsListWindowId = request.windowId;
-    sendResponse({ success: true });
+    sendResponse({ tabHistory: tabHistory });
   } else if (request.action === 'switchToPreviousTab') {
     const index = request.index || 1;
     
@@ -96,60 +85,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
-// Handle keyboard shortcut
+// Handle keyboard shortcut - open the popup
 chrome.commands.onCommand.addListener(async (command) => {
   if (command === 'go-to-previous-tab') {
-    // Check if tabs list window is already open
-    if (tabsListWindowId) {
-      try {
-        const window = await chrome.windows.get(tabsListWindowId);
-        
-        // Window exists, increment selection
-        shortcutClickCount++;
-        
-        // Notify the popup window to update selection
-        chrome.runtime.sendMessage({
-          action: 'updateSelection',
-          selectedIndex: shortcutClickCount
-        });
-        
-        // Focus the window
-        chrome.windows.update(tabsListWindowId, { focused: true });
-      } catch (error) {
-        // Window doesn't exist, reset and open new one
-        tabsListWindowId = null;
-        shortcutClickCount = 0;
-        openTabsList();
-      }
-    } else {
-      // Open new tabs list window
-      shortcutClickCount = 0;
-      openTabsList();
-    }
-  }
-});
-
-// Function to open tabs list window
-function openTabsList() {
-  chrome.windows.create({
-    url: chrome.runtime.getURL('tabs-list.html'),
-    type: 'popup',
-    width: 520,
-    height: 650,
-    focused: true
-  }, (window) => {
-    tabsListWindowId = window.id;
-  });
-}
-
-// Listen for window close to reset tracking
-chrome.windows.onRemoved.addListener((windowId) => {
-  if (windowId === tabsListWindowId) {
-    tabsListWindowId = null;
-    shortcutClickCount = 0;
-    if (shortcutTimer) {
-      clearTimeout(shortcutTimer);
-      shortcutTimer = null;
-    }
+    // Open the extension popup programmatically
+    chrome.action.openPopup();
   }
 });
