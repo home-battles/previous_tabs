@@ -14,6 +14,24 @@ document.addEventListener('keydown', (e) => {
     }
   }
   
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    // Move selection down
+    if (tabItems.length > 0) {
+      selectedIndex = (selectedIndex + 1) % tabItems.length;
+      updateSelection(selectedIndex);
+    }
+  }
+  
+  if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    // Move selection up
+    if (tabItems.length > 0) {
+      selectedIndex = (selectedIndex - 1 + tabItems.length) % tabItems.length;
+      updateSelection(selectedIndex);
+    }
+  }
+  
   if (e.key === 'Alt') {
     e.preventDefault();
     // Switch to selected tab
