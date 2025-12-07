@@ -1,6 +1,6 @@
 const tabsContainer = document.getElementById('tabsContainer');
 
-let selectedIndex = 0;
+let selectedIndex = 1; // Start with previous tab selected (index 1)
 let tabItems = [];
 
 // Handle keydown events
