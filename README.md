@@ -4,7 +4,9 @@
   <img src="icons/logo.png" alt="Previous Tabs Logo" width="128">
 </p>
 
-Quickly switch between your currently open tabs based on which ones you used most recently. This extension tracks the order you activate tabs and lets you jump back to previously used tabs with keyboard shortcuts or a visual popup interface.
+Quickly switch between your currently open tabs based on which ones you used most recently. 
+
+This extension tracks the order you activate tabs and lets you jump back to previously used tabs with keyboard shortcuts or a visual popup interface.
 
 ## Features
 
