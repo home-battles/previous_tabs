@@ -135,6 +135,11 @@ async function loadTabs() {
     // Store tab items for later reference
     tabItems = Array.from(document.querySelectorAll('.tab-item'));
     
+    // Ensure selectedIndex is valid
+    if (selectedIndex >= tabItems.length) {
+      selectedIndex = Math.max(0, tabItems.length - 1);
+    }
+    
     // Scroll selected item into view
     if (tabItems[selectedIndex]) {
       tabItems[selectedIndex].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
