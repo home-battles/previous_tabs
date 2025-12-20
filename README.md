@@ -15,7 +15,7 @@ This extension tracks the order you activate tabs and lets you jump back to prev
 ## Features
 
 <p align="center">
-  <img src="screenshots/popup.png" alt="Previous Tabs Popup" width="400">
+  <img src="screenshots/popup.png" alt="Previous Tabs Popup" width="600">
 </p>
 
 - **Recent Tab Switching**: See all your currently open tabs sorted by most recently used
