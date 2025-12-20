@@ -4,6 +4,8 @@
   <img src="icons/logo.png" alt="Previous Tabs Logo" width="128">
 </p>
 
+Download: [Chrome Web Store](https://chromewebstore.google.com/detail/eblifgcpecjmbddmmaipjccdeednjeam?utm_source=item-share-cb)
+
 Quickly switch between your currently open tabs based on which ones you used most recently. 
 
 This extension tracks the order you activate tabs and lets you jump back to previously used tabs with keyboard shortcuts or a visual popup interface.
@@ -46,6 +48,11 @@ This extension tracks the order you activate tabs and lets you jump back to prev
 
 ## Installation
 
+### From Chrome Web Store
+1. Go to the [Chrome Web Store page](https://chromewebstore.google.com/detail/eblifgcpecjmbddmmaipjccdeednjeam?utm_source=item-share-cb)
+2. Click "Add to Chrome"
+3. Confirm by clicking "Add extension"
+
 ### From Source
 
 1. Clone or download this repository
@@ -56,7 +63,7 @@ This extension tracks the order you activate tabs and lets you jump back to prev
 
 ## Workflow Example
 
-1. Press `Alt+W` → Opens popup showing all currently open tabs sorted by recent usage
+1. Press `Alt + W` → Opens popup showing all currently open tabs sorted by recent usage
 2. Press `W` three times → Cycles selection to the 4th most recently used tab
 3. Press `Enter` → Switches to that tab
 4. Or simply click on any tab in the list to switch to it immediately
