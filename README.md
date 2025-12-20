@@ -8,6 +8,8 @@ Quickly switch between your currently open tabs based on which ones you used mos
 
 This extension tracks the order you activate tabs and lets you jump back to previously used tabs with keyboard shortcuts or a visual popup interface.
 
+[![Previous Tabs Demo Video](https://img.youtube.com/vi/hwY9kmJ0rws/maxresdefault.jpg)](https://www.youtube.com/watch?v=hwY9kmJ0rws)
+
 ## Features
 
 <p align="center">
