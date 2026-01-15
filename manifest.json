@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Previous Tabs",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Navigate to previously opened tabs by pressing a button. Press multiple times to go further back in history.",
   "permissions": [
     "tabs",

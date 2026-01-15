@@ -4,6 +4,21 @@ let tabHistory = [];
 // Maximum history size to prevent memory issues
 const MAX_HISTORY_SIZE = 100;
 
+// Track initialization status
+let isInitialized = false;
+
+// Initialize history from storage when extension loads
+async function initializeHistory() {
+  const result = await chrome.storage.local.get(['tabHistory']);
+  if (result.tabHistory) {
+    tabHistory = result.tabHistory;
+  }
+  isInitialized = true;
+}
+
+// Initialize immediately
+initializeHistory();
+
 // Listen to tab activation events
 chrome.tabs.onActivated.addListener((activeInfo) => {
   const tabId = activeInfo.tabId;
@@ -30,16 +45,16 @@ chrome.tabs.onRemoved.addListener((tabId) => {
   chrome.storage.local.set({ tabHistory: tabHistory });
 });
 
-// Initialize history from storage when extension loads
-chrome.storage.local.get(['tabHistory'], (result) => {
-  if (result.tabHistory) {
-    tabHistory = result.tabHistory;
-  }
-});
-
 // Handle messages from popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'getTabHistory') {
+    // Ensure history is initialized before responding
+    if (!isInitialized) {
+      initializeHistory().then(() => {
+        sendResponse({ tabHistory: tabHistory });
+      });
+      return true; // Keep message channel open for async response
+    }
     sendResponse({ tabHistory: tabHistory });
   } else if (request.action === 'switchToPreviousTab') {
     const index = request.index || 1;
