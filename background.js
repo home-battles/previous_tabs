@@ -1,0 +1,109 @@
+// Track tab history - stores tab IDs in order of activation
+let tabHistory = [];
+
+// Maximum history size to prevent memory issues
+const MAX_HISTORY_SIZE = 100;
+
+// Track initialization status
+let isInitialized = false;
+
+// Initialize history from storage when extension loads
+async function initializeHistory() {
+  const result = await chrome.storage.local.get(['tabHistory']);
+  if (result.tabHistory) {
+    tabHistory = result.tabHistory;
+  }
+  isInitialized = true;
+}
+
+// Initialize immediately
+initializeHistory();
+
+// Listen to tab activation events
+chrome.tabs.onActivated.addListener((activeInfo) => {
+  const tabId = activeInfo.tabId;
+  
+  // Remove the tab from history if it already exists (to avoid duplicates)
+  tabHistory = tabHistory.filter(id => id !== tabId);
+  
+  // Add the current tab to the front of history
+  tabHistory.unshift(tabId);
+  
+  // Limit history size
+  if (tabHistory.length > MAX_HISTORY_SIZE) {
+    tabHistory = tabHistory.slice(0, MAX_HISTORY_SIZE);
+  }
+  
+  // Store in chrome.storage for persistence
+  chrome.storage.local.set({ tabHistory: tabHistory });
+});
+
+// Listen to tab removal events to clean up history
+chrome.tabs.onRemoved.addListener((tabId) => {
+  // Remove closed tab from history
+  tabHistory = tabHistory.filter(id => id !== tabId);
+  chrome.storage.local.set({ tabHistory: tabHistory });
+});
+
+// Handle messages from popup
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === 'getTabHistory') {
+    // Ensure history is initialized before responding
+    if (!isInitialized) {
+      initializeHistory().then(() => {
+        sendResponse({ tabHistory: tabHistory });
+      });
+      return true; // Keep message channel open for async response
+    }
+    sendResponse({ tabHistory: tabHistory });
+  } else if (request.action === 'switchToPreviousTab') {
+    const index = request.index || 1;
+    
+    // Get the current active tab
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      const currentTabId = tabs[0]?.id;
+      
+      // Find the index of current tab in history
+      const currentIndex = tabHistory.indexOf(currentTabId);
+      
+      // Calculate target index (skip the current tab which should be at index 0)
+      let targetIndex = index;
+      if (currentIndex === 0) {
+        targetIndex = index; // Current tab is at top, so nth previous is at index n
+      } else {
+        targetIndex = currentIndex + index;
+      }
+      
+      // Get the target tab ID
+      if (targetIndex < tabHistory.length) {
+        const targetTabId = tabHistory[targetIndex];
+        
+        // Verify the tab still exists and switch to it
+        chrome.tabs.get(targetTabId, (tab) => {
+          if (chrome.runtime.lastError) {
+            // Tab doesn't exist, clean up history
+            tabHistory = tabHistory.filter(id => id !== targetTabId);
+            chrome.storage.local.set({ tabHistory: tabHistory });
+            sendResponse({ success: false, error: 'Tab no longer exists' });
+          } else {
+            // Switch to the tab
+            chrome.tabs.update(targetTabId, { active: true });
+            sendResponse({ success: true });
+          }
+        });
+      } else {
+        sendResponse({ success: false, error: 'No more tabs in history' });
+      }
+    });
+    
+    return true; // Keep message channel open for async response
+  }
+});
+
+// Handle keyboard shortcut - open the popup
+chrome.commands.onCommand.addListener(async (command) => {
+  if (command === 'go-to-previous-tab') {
+    // Open the extension popup programmatically
+    chrome.action.openPopup();
+  }
+});
