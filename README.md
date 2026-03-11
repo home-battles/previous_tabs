@@ -94,3 +94,6 @@ MIT License - Feel free to use and modify as needed.
 ## Contributing
 
 Contributions are welcome! Feel free to submit issues or pull requests.
+
+## Credits
+- [@shivamag00](https://github.com/shivamag00)
